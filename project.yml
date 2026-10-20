@@ -33,6 +33,9 @@ targets:
       base:
         PRODUCT_NAME: Trails
         PRODUCT_BUNDLE_IDENTIFIER: com.legionorange.trails
+        DEAD_CODE_STRIPPING: NO
+        COPY_PHASE_STRIP: NO
+        STRIP_INSTALLED_PRODUCT: NO
         INFOPLIST_FILE: Trails/Info.plist
         CODE_SIGN_ENTITLEMENTS: Trails/Trails.entitlements
         GENERATE_INFOPLIST_FILE: NO
@@ -61,6 +64,9 @@ targets:
         PRODUCT_NAME: TrailsTests
         PRODUCT_MODULE_NAME: TrailsTests
         PRODUCT_BUNDLE_IDENTIFIER: com.legionorange.trails.tests
+        TEST_TARGET_NAME: Trails
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Trails.app/Trails
+        BUNDLE_LOADER: $(TEST_HOST)
         GENERATE_INFOPLIST_FILE: YES
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"
         CODE_SIGNING_ALLOWED: NO
