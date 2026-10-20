@@ -1,0 +1,131 @@
+name: iOS
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Bygg och testa
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - name: Checka ut koden
+        uses: actions/checkout@v4
+
+      - name: Välj Xcode
+        run: |
+          set -euo pipefail
+          if [ -d /Applications/Xcode_26.6.app ]; then
+            sudo xcode-select -s /Applications/Xcode_26.6.app
+          fi
+          xcodebuild -version
+          xcode-select -p
+
+      - name: Cache XcodeGen
+        id: xcodegen-cache
+        uses: actions/cache@v4
+        with:
+          path: tools/xcodegen
+          key: xcodegen-2.46.0-${{ runner.os }}-${{ runner.arch }}
+
+      - name: Installera XcodeGen
+        run: |
+          set -euo pipefail
+          mkdir -p tools/xcodegen
+          if [ ! -x tools/xcodegen/xcodegen ]; then
+            curl -fsSL -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/download/2.46.0/xcodegen.zip
+            rm -rf /tmp/xcodegen-src
+            unzip -q /tmp/xcodegen.zip -d /tmp/xcodegen-src
+            bin="$(find /tmp/xcodegen-src -type f -name xcodegen | head -n 1)"
+            if [ -z "$bin" ]; then
+              echo "Hittade inte xcodegen-binären i zip-filen" >&2
+              find /tmp/xcodegen-src -maxdepth 3 -print >&2
+              exit 1
+            fi
+            cp "$bin" tools/xcodegen/xcodegen
+            chmod +x tools/xcodegen/xcodegen
+          fi
+          tools/xcodegen/xcodegen --version
+
+      - name: Generera Xcode-projektet
+        run: tools/xcodegen/xcodegen generate --spec project.yml
+
+      - name: Bygg och testa på simulator
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available
+          DEST="$(python3 - <<'PY'
+          import json, subprocess, sys
+          raw = subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "-j"], text=True)
+          data = json.loads(raw)
+          best = None
+          for runtime, devices in data.get("devices", {}).items():
+              marker = "iOS-"
+              if marker not in runtime:
+                  continue
+              parts = []
+              for piece in runtime.split(marker, 1)[1].split("-"):
+                  if piece.isdigit():
+                      parts.append(int(piece))
+                  else:
+                      break
+              if not parts:
+                  continue
+              version = tuple(parts)
+              for device in devices:
+                  if not device.get("isAvailable", True):
+                      continue
+                  availability = str(device.get("availability", ""))
+                  if "unavailable" in availability.lower():
+                      continue
+                  name = device.get("name", "")
+                  if not name.startswith("iPhone"):
+                      continue
+                  preference = 3 if name == "iPhone 17" else 2 if name.startswith("iPhone 17") else 1
+                  score = (version, preference)
+                  if best is None or score > best[0]:
+                      best = (score, device["udid"], name, version)
+          if best is None:
+              sys.exit("Ingen tillgänglig iPhone-simulator hittades")
+          _, udid, name, version = best
+          print(f"Vald simulator: {name} iOS {'.'.join(map(str, version))} ({udid})", file=sys.stderr)
+          print(f"platform=iOS Simulator,id={udid}")
+          PY
+          )"
+          echo "Destination: $DEST"
+          xcodebuild test \
+            -project Trails.xcodeproj \
+            -scheme Trails \
+            -destination "$DEST" \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            | tee "$RUNNER_TEMP/xcodebuild.log"
+
+      - name: Ladda upp simulator-app
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trails-simulator
+          path: DerivedData/Build/Products/Debug-iphonesimulator/Trails.app
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Ladda upp bygglogg
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ${{ runner.temp }}/xcodebuild.log
+          if-no-files-found: ignore
+          retention-days: 14
