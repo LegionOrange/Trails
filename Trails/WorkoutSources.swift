@@ -130,7 +130,7 @@ final class HealthKitWorkoutSource: WorkoutSource {
             guard coordinates.count >= 2 else { continue }
             let meters = workout.totalDistance?.doubleValue(for: .meter())
                 ?? RouteGeometry.distanceMeters(from: coordinates)
-            let title = workout.workoutActivityType == .trailRunning ? "Terränglöpning" : "Löpning"
+            let title = "Löpning"
             runs.append(RunWorkout(
                 id: workout.uuid,
                 title: title,
@@ -145,10 +145,7 @@ final class HealthKitWorkoutSource: WorkoutSource {
 
     private func fetchWorkouts() async throws -> [HKWorkout] {
         try await withCheckedThrowingContinuation { continuation in
-            let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-                HKQuery.predicateForWorkouts(with: .running),
-                HKQuery.predicateForWorkouts(with: .trailRunning)
-            ])
+            let predicate = HKQuery.predicateForWorkouts(with: .running)
             let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
             let query = HKSampleQuery(
                 sampleType: HKObjectType.workoutType(),

@@ -2,10 +2,12 @@ name: iOS
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 concurrency:
-  group: ios-${{ github.workflow }}-${{ github.ref }}
+  group: ios-${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 permissions:

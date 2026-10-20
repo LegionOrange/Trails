@@ -4,7 +4,7 @@ Trackin' Trails är en liten iOS-app som visar löprundor med GPS-rutt. Xcode-m�
 
 Appen gör fyra saker:
 
-1. Läser löppass från Hälsa (`HKWorkout` för löpning och terränglöpning) och deras GPS-rutter (`HKWorkoutRoute`).
+1. Läser löppass från Hälsa (`HKWorkout` med aktivitetstypen löpning) och deras GPS-rutter (`HKWorkoutRoute`).
 2. Visar passen i en lista och ritar varje rutt som en linje på en SwiftUI-karta.
 3. Låter dig markera rutter. Markeringarna sparas lokalt med SwiftData och visas tillsammans: en karta med alla markerade rutter och en lista med datum, distans och tid.
 4. Söker i bildbiblioteket efter foton tagna mellan passets start och mål, visar miniatyrer och öppnar bilden vid tryck.
@@ -59,7 +59,7 @@ Välj en iPhone-simulator och kör. Signering är avstängd i `project.yml` (`CO
 
 ## GitHub Actions
 
-Workflowen **iOS** körs på `push` och `pull_request` med den GitHub-hostade imagen `macos-26` (Apple Silicon). Den har Xcode 26.6 som förval, alltså senaste stabila Xcode på imagen. Xcode 27 finns bara som förhandsversion och används inte.
+Workflowen **iOS** körs på `pull_request` och på `push` till `main`, med den GitHub-hostade imagen `macos-26` (Apple Silicon). Push till en PR-gren startar inte ett extra jobb, så samma commit byggs bara en gång. En concurrency-grupp avbryter en pågående körning om samma commit köas igen. Imagen har Xcode 26.6 som förval, alltså senaste stabila Xcode. Xcode 27 finns bara som förhandsversion och används inte.
 
 Stegen är:
 
