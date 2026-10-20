@@ -97,7 +97,7 @@ jobs:
               sys.exit("Ingen tillgänglig iPhone-simulator hittades")
           _, udid, name, version = best
           print(f"Vald simulator: {name} iOS {'.'.join(map(str, version))} ({udid})", file=sys.stderr)
-          print(f"platform=iOS Simulator,id={udid}")
+          print(f"platform=iOS Simulator,id={udid},arch=arm64")
           PY
           )"
           echo "Destination: $DEST"
