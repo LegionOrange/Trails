@@ -77,27 +77,46 @@ struct RootView: View {
                 .accessibilityIdentifier("summarize-button")
                 .buttonStyle(MapChromeButtonStyle())
             }
-            Button(model.isSelecting ? "Klar" : "Välj") {
+            Button {
                 if model.isSelecting {
                     model.endSelection()
                 } else {
                     model.beginSelection()
                     detent = .medium
                 }
+            } label: {
+                if model.isSelecting {
+                    Text("Klar")
+                } else {
+                    Image(systemName: "rectangle.dashed")
+                        .font(.system(size: 18, weight: .semibold))
+                        .accessibilityHidden(true)
+                }
             }
             .accessibilityIdentifier("select-button")
-            .buttonStyle(MapChromeButtonStyle())
+            .accessibilityLabel(model.isSelecting ? "Klar" : "Välj")
+            .buttonStyle(MapChromeButtonStyle(circular: !model.isSelecting))
         }
     }
 }
 
 private struct MapChromeButtonStyle: ButtonStyle {
+    var circular = false
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .frame(minWidth: circular ? 44 : nil, minHeight: circular ? 44 : nil)
+            .padding(.horizontal, circular ? 0 : 16)
+            .padding(.vertical, circular ? 0 : 8)
+            .background {
+                if circular {
+                    Circle().fill(.regularMaterial)
+                } else {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.regularMaterial)
+                }
+            }
             .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }
