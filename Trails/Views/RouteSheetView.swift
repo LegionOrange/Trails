@@ -42,7 +42,6 @@ struct RouteSheet: View {
         pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .padding(.top, 12)
-            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("sheet")
             .sheet(item: $selectedPhoto) { photo in
                 PhotoDetailView(photo: photo)
@@ -70,7 +69,7 @@ struct RouteSheet: View {
     private var routesPage: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                sheetTitle(model.isSelecting ? "Välj rutter" : "Rutter", count: model.visibleRuns.count)
+                sheetTitle(model.isSelecting ? "Välj rutter" : "Rutter", count: model.visibleRuns.count, identifier: "routes-list")
                 if let statusMessage = model.statusMessage {
                     Text(statusMessage)
                         .font(.footnote)
@@ -92,7 +91,6 @@ struct RouteSheet: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
         }
-        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("routes-list")
     }
 
@@ -157,6 +155,7 @@ struct RouteSheet: View {
 
                 Text(run.title)
                     .font(.largeTitle.bold())
+                    .accessibilityIdentifier("route-detail")
                 Text(RunFormatting.dateTime(run.startDate))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -184,7 +183,6 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
-        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("route-detail")
     }
 
@@ -225,7 +223,7 @@ struct RouteSheet: View {
     private var filterPage: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                sheetTitle("Filter", count: nil)
+                sheetTitle("Filter", count: nil, identifier: "filter-screen")
                 Text("\(model.visibleRuns.count) rutter visas på kartan")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -269,7 +267,6 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
-        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("filter-screen")
     }
 
@@ -277,7 +274,7 @@ struct RouteSheet: View {
         let stats = model.statistics
         return ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                sheetTitle("Statistik", count: nil)
+                sheetTitle("Statistik", count: nil, identifier: "stats-screen")
                 Text("Baserat på rutterna som filtret visar.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -293,7 +290,6 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
-        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("stats-screen")
     }
 
@@ -303,6 +299,7 @@ struct RouteSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Sammanfattning")
                     .font(.largeTitle.bold())
+                    .accessibilityIdentifier("summary-screen")
                 Text("\(stats.count) valda rutter")
                     .font(.title3)
                     .foregroundStyle(.secondary)
@@ -329,14 +326,14 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
-        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("summary-screen")
     }
 
-    private func sheetTitle(_ title: String, count: Int?) -> some View {
+    private func sheetTitle(_ title: String, count: Int?, identifier: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
                 .font(.largeTitle.bold())
+                .accessibilityIdentifier(identifier)
             Spacer()
             if let count {
                 Text("\(count)")

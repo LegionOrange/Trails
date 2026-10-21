@@ -24,7 +24,8 @@ struct RootView: View {
                 )
                 .ignoresSafeArea()
                 .accessibilityIdentifier(model.isLoading ? "map-loading" : "map-ready")
-
+            }
+            .overlay(alignment: .bottom) {
                 if showsPanel {
                     RouteSheet(page: $page, detent: $detent)
                         .padding(.bottom, 124)
@@ -38,15 +39,13 @@ struct RootView: View {
                                 .padding(.top, 8)
                                 .accessibilityHidden(true)
                         }
-                        .accessibilityIdentifier("panel")
                         .clipShape(UnevenRoundedRectangle(topLeadingRadius: 28, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 28))
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .ignoresSafeArea(edges: .bottom)
+                        .accessibilityIdentifier("panel")
                 }
             }
             .overlay(alignment: .top) { topChrome }
             .overlay(alignment: .bottom) { bottomChrome }
-            .animation(.spring(duration: 0.38), value: showsPanel)
-            .animation(.spring(duration: 0.38), value: detent == Self.largeDetent)
         }
         .preferredColorScheme(.dark)
         .tint(TrailTheme.accent)

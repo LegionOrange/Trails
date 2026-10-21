@@ -112,12 +112,12 @@ struct TrailsMap: View {
     private func stroke(for run: RunWorkout) -> (glow: Color, glowWidth: CGFloat, core: Color, coreWidth: CGFloat) {
         let dimmed = isDimmed(run)
         if drawMode == .heatmap {
-            let strength = dimmed ? 0.35 : 1.0
+            let strength = dimmed ? 0.45 : 1.0
             return (
-                TrailTheme.routeGlow.opacity(0.30 * strength),
-                13,
-                TrailTheme.routeCore.opacity(0.50 * strength),
-                5.5
+                TrailTheme.routeGlow.opacity(0.62 * strength),
+                16,
+                TrailTheme.routeCore.opacity(0.9 * strength),
+                6.5
             )
         }
         let strength = dimmed ? 0.28 : 1.0
