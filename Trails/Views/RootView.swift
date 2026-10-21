@@ -3,7 +3,7 @@ import SwiftUI
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @State private var detent: PresentationDetent = Self.smallDetent
-    @State private var showsSheet = true
+    @State private var showsSheet = false
 
     static let smallDetent = PresentationDetent.height(210)
     static let largeDetent = PresentationDetent.fraction(0.80)
@@ -44,6 +44,11 @@ struct RootView: View {
         }
         .tint(TrailTheme.accent)
         .task {
+            // A sheet whose flag starts true never transitions into view.
+            if !showsSheet {
+                try? await Task.sleep(for: .milliseconds(300))
+                showsSheet = true
+            }
             await model.reloadIfNeeded()
         }
         .onChange(of: model.focusedRunID) { _, focusedID in

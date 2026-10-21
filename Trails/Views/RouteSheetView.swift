@@ -51,6 +51,7 @@ struct RouteSheet: View {
 
             tabBar
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("sheet")
         .sheet(item: $selectedPhoto) { photo in
             PhotoDetailView(photo: photo)
@@ -68,6 +69,7 @@ struct RouteSheet: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .padding(.top, 4)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("sheet-peek")
     }
 
@@ -114,6 +116,7 @@ struct RouteSheet: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("routes-list")
     }
 
@@ -205,6 +208,7 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("route-detail")
     }
 
@@ -289,6 +293,7 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("filter-screen")
     }
 
@@ -312,6 +317,7 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("stats-screen")
     }
 
@@ -347,6 +353,7 @@ struct RouteSheet: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 12)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("summary-screen")
     }
 

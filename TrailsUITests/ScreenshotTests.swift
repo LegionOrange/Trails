@@ -10,8 +10,8 @@ final class ScreenshotTests: XCTestCase {
         app.launchArguments = ["-demo-data"]
         app.launch()
 
-        XCTAssertTrue(app.descendants(matching: .any)["map-ready"].waitForExistence(timeout: 30))
-        XCTAssertTrue(app.descendants(matching: .any)["sheet-peek"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any)["map-ready"].waitForExistence(timeout: 30), "Map did not finish loading")
+        XCTAssertTrue(app.descendants(matching: .any)["sheet-peek"].waitForExistence(timeout: 20), "Bottom sheet did not appear")
         XCTAssertTrue(app.staticTexts["4 rutter"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["Välj"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Rutter"].waitForExistence(timeout: 5))
