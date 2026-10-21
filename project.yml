@@ -1,0 +1,89 @@
+name: Trails
+options:
+  bundleIdPrefix: com.legionorange
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  developmentLanguage: sv
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGNING_ALLOWED: NO
+    CODE_SIGNING_REQUIRED: NO
+    CODE_SIGN_IDENTITY: ""
+    DEVELOPMENT_TEAM: ""
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ALWAYS_SEARCH_USER_PATHS: NO
+    ONLY_ACTIVE_ARCH: YES
+    "EXCLUDED_ARCHS[sdk=iphonesimulator*]": x86_64
+    TARGETED_DEVICE_FAMILY: "1,2"
+targets:
+  Trails:
+    type: application
+    platform: iOS
+    sources:
+      - path: Trails
+        excludes:
+          - Info.plist
+          - Trails.entitlements
+    settings:
+      base:
+        PRODUCT_NAME: Trails
+        PRODUCT_BUNDLE_IDENTIFIER: com.legionorange.trails
+        DEAD_CODE_STRIPPING: NO
+        COPY_PHASE_STRIP: NO
+        STRIP_INSTALLED_PRODUCT: NO
+        INFOPLIST_FILE: Trails/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Trails/Trails.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SUPPORTS_MACCATALYST: NO
+        SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD: NO
+        SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_TESTABILITY: YES
+    dependencies:
+      - sdk: HealthKit.framework
+      - sdk: MapKit.framework
+      - sdk: Photos.framework
+  TrailsTests:
+    type: bundle.unit-test
+    platform: iOS
+    productName: TrailsTests
+    sources:
+      - path: TrailsTests
+    dependencies:
+      - target: Trails
+    settings:
+      base:
+        PRODUCT_NAME: TrailsTests
+        PRODUCT_MODULE_NAME: TrailsTests
+        PRODUCT_BUNDLE_IDENTIFIER: com.legionorange.trails.tests
+        TEST_TARGET_NAME: Trails
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/Trails.app/Trails
+        BUNDLE_LOADER: $(TEST_HOST)
+        GENERATE_INFOPLIST_FILE: YES
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        DEVELOPMENT_TEAM: ""
+schemes:
+  Trails:
+    build:
+      targets:
+        Trails: all
+        TrailsTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - TrailsTests
+    archive:
+      config: Release
