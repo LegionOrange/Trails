@@ -10,42 +10,80 @@ final class ScreenshotTests: XCTestCase {
         app.launchArguments = ["-demo-data"]
         app.launch()
 
-        XCTAssertTrue(app.descendants(matching: .any)["run-list"].waitForExistence(timeout: 30))
-        let firstRun = app.staticTexts["Nackareservatet"]
-        XCTAssertTrue(firstRun.waitForExistence(timeout: 10), "Run list did not show the sample route")
+        XCTAssertTrue(app.descendants(matching: .any)["map-ready"].waitForExistence(timeout: 30))
+        XCTAssertTrue(app.descendants(matching: .any)["sheet-peek"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["4 rutter"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Välj"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Rutter"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Filter"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Statistik"].waitForExistence(timeout: 5))
+        waitForRendering()
+        try save("01-map-small")
+
+        tap("tab-rutter", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["routes-list"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Nackareservatet"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Djurgården"].waitForExistence(timeout: 5))
-        try save("01-run-list")
+        XCTAssertTrue(app.staticTexts["Södermalm"].waitForExistence(timeout: 5))
+        waitForRendering(seconds: 2)
+        try save("02-routes-list")
 
-        firstRun.tap()
-        XCTAssertTrue(app.navigationBars["Nackareservatet"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.descendants(matching: .any)["route-map"].waitForExistence(timeout: 10))
-        waitForRendering()
-        try save("02-run-route")
+        tap("run-Nackareservatet", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["route-detail"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Foton från passet"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any)["photo-0"].waitForExistence(timeout: 10))
+        XCTAssertTrue(
+            app.staticTexts["Ta bort markering"].waitForExistence(timeout: 5)
+                || app.buttons["Ta bort markering"].waitForExistence(timeout: 5)
+        )
+        waitForRendering(seconds: 2)
+        try save("03-route-detail")
 
-        var photo = app.descendants(matching: .any)["photo-0"]
-        if !photo.waitForExistence(timeout: 3) {
-            app.swipeUp()
-            photo = app.descendants(matching: .any)["photo-0"]
-        }
-        XCTAssertTrue(photo.waitForExistence(timeout: 10), "Sample photo thumbnail was not on the run")
-        photo.tap()
-        XCTAssertTrue(app.descendants(matching: .any)["photo-detail"].waitForExistence(timeout: 10))
+        tap("tab-filter", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["filter-screen"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Endast markerade"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Visa endast valda"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Datumintervall"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Distans"].waitForExistence(timeout: 5))
         waitForRendering(seconds: 1)
-        try save("03-run-photos")
+        try save("04-filter")
 
-        let close = app.buttons["Stäng"]
-        XCTAssertTrue(close.waitForExistence(timeout: 5))
-        close.tap()
+        tap("tab-statistik", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["stats-screen"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Total distans"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Total tid"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Snittempo"].waitForExistence(timeout: 5))
+        waitForRendering(seconds: 1)
+        try save("05-statistik")
 
-        let markedTab = app.tabBars.buttons["Markerade"].exists
-            ? app.tabBars.buttons["Markerade"]
-            : app.buttons["Markerade"]
-        XCTAssertTrue(markedTab.waitForExistence(timeout: 10))
-        markedTab.tap()
-        XCTAssertTrue(app.staticTexts["Markerade rundor"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.descendants(matching: .any)["marked-map"].waitForExistence(timeout: 10))
-        waitForRendering()
-        try save("04-marked-routes")
+        tap("tab-rutter", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["routes-list"].waitForExistence(timeout: 10))
+        tap("select-button", in: app)
+        XCTAssertTrue(app.staticTexts["Välj rutter"].waitForExistence(timeout: 10))
+        tap("choose-Nackareservatet", in: app)
+        tap("choose-Djurgården", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["summarize-button"].waitForExistence(timeout: 10))
+        waitForRendering(seconds: 2)
+        try save("06-selection")
+
+        tap("summarize-button", in: app)
+        XCTAssertTrue(app.descendants(matching: .any)["summary-screen"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Sammanfattning"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["2 valda rutter"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Nackareservatet"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Djurgården"].waitForExistence(timeout: 5))
+        waitForRendering(seconds: 3)
+        try save("07-summary")
+    }
+
+    private func tap(_ identifier: String, in app: XCUIApplication, timeout: TimeInterval = 10) {
+        let element = app.descendants(matching: .any)[identifier]
+        XCTAssertTrue(element.waitForExistence(timeout: timeout), identifier)
+        if element.isHittable {
+            element.tap()
+        } else {
+            element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
     }
 
     private func waitForRendering(seconds: TimeInterval = 4) {

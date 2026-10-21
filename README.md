@@ -2,14 +2,17 @@
 
 Trackin' Trails är en liten iOS-app som visar löprundor med GPS-rutt. Xcode-målet och produktnamnet är **Trails**, visningsnamnet på hemskärmen och i appen är **Trackin' Trails**, och bundle-id är `com.legionorange.trails`.
 
-Appen gör fyra saker:
+Kartan är alltid bakgrunden. Ett ark nedtill, i samma stil som Hitta (Find My), kan dras mellan liten, mellan och stor höjd. Längst ner i arket finns **Rutter**, **Filter** och **Statistik**.
 
-1. Läser löppass från Hälsa (`HKWorkout` med aktivitetstypen löpning) och deras GPS-rutter (`HKWorkoutRoute`).
-2. Visar passen i en lista och ritar varje rutt som en linje på en SwiftUI-karta.
-3. Låter dig markera rutter. Markeringarna sparas lokalt med SwiftData och visas tillsammans: en karta med alla markerade rutter och en lista med datum, distans och tid.
-4. Söker i bildbiblioteket efter foton tagna mellan passets start och mål, visar miniatyrer och öppnar bilden vid tryck.
+1. Löppass läses från Hälsa (`HKWorkout` med aktivitetstypen löpning) och deras GPS-rutter (`HKWorkoutRoute`). Alla rutter som filtret släpper igenom ritas på kartan.
+2. **Rutter** listar passen. Ett tryck markerar ruttens linje på kartan och öppnar detaljen i arket: distans, tid, tempo, markering och foton från passet.
+3. Markeringar sparas lokalt med SwiftData. En markerad rutt kan filtreras fram med **Endast markerade**.
+4. Foton söks i bildbiblioteket mellan passets start och mål. Miniatyrerna visas i detaljen och öppnas vid tryck.
+5. **Filter** styr vilka rutter kartan, listan och statistiken visar: endast markerade, endast valda, datumintervall och distansintervall.
+6. **Statistik** summerar rutterna som filtret visar: antal, total distans, total tid, snittempo och snittdistans.
+7. **Välj** uppe till höger startar ett urval. Rutter kan kryssas i listan eller tryckas på kartan. **Sammanfatta** visar de valda rutterna tillsammans på kartan med samlad statistik. **Visa endast valda** gör urvalet till ett filter för kartan, listan och statistiken.
 
-Simulatorn har ingen riktig hälsodata. Därför finns en inbyggd exempelkälla med fyra rundor runt Stockholm och genererade exempelbilder, så att gränssnittet går att köra i simulatorn och i SwiftUI-previews. På en enhet där Hälsa finns är **Hälsa** förvald. I simulatorn är **Exempel** förvald. Källan byts i menyn uppe till höger.
+Simulatorn har ingen riktig hälsodata. Därför finns en inbyggd exempelkälla med fyra rundor runt Stockholm och genererade exempelbilder, så att gränssnittet går att köra i simulatorn och i SwiftUI-previews. På en enhet där Hälsa finns är **Hälsa** förvald. I simulatorn är **Exempel** förvald. Källan byts under **Filter**. Start med `-demo-data` tvingar exempelrutter, markerar de två senaste och frågar aldrig efter Hälsa eller Bilder.
 
 Det finns inget Apple Developer-konto i det här läget, och appen kodsigneras inte. Inget TestFlight och inga certifikat.
 
@@ -19,18 +22,19 @@ Det finns inget Apple Developer-konto i det här läget, och appen kodsigneras i
 project.yml                         XcodeGen-spec. Det här är källan till Xcode-projektet.
 Trails/
   TrailsApp.swift                   Start, SwiftData-container och datakällor
-  AppModel.swift                    Lista, markeringar, källbyte
+  AppModel.swift                    Rutter, filter, urval, markeringar och källbyte
   Models.swift                      RunWorkout, WorkoutPhoto, FavoriteMark
+  RouteQuery.swift                  Filter, statistik och tempo
   WorkoutSources.swift              HealthKit och exempelpass
   PhotoSources.swift                PhotoKit och exempelbilder
   FavoritesRepository.swift         Lokala markeringar
-  RouteGeometry.swift               Längd, kartregion, listminiatyr
+  RouteGeometry.swift               Längd, kartregion, närmaste rutt, listminiatyr
   RunFormatting.swift               Svensk formatering och tidsfönster
   Info.plist                        Visningsnamn och användningssträngar
   Trails.entitlements               com.apple.developer.healthkit
-  Views/                            Lista, detalj, karta, markerade rutter
-TrailsTests/                        Enhetstester för geometri, exempeldata och markeringar
-TrailsUITests/                      Skärmbilder av huvudvyerna, startas med -demo-data
+  Views/                            Karta, bottenark, ruttdetalj, filter och statistik
+TrailsTests/                        Enhetstester för geometri, filter, urval, exempeldata och markeringar
+TrailsUITests/                      Skärmbilder av kartan och arket, startas med -demo-data
 docs/screenshots/                   PNG-bilder från den senaste gröna CI-körningen
 .github/workflows/ios.yml           Bygger och testar på macOS-runner
 ```
@@ -70,7 +74,7 @@ Stegen är:
 3. `xcodegen generate` skapar projektet från `project.yml`.
 4. Den nyaste installerade iPhone-simulatorn väljs (iPhone 17 om den finns).
 5. `xcodebuild test` bygger appen och kör `TrailsTests` och `TrailsUITests` med `CODE_SIGNING_ALLOWED=NO`. UI-testet startar appen med `-demo-data`, så exempelrutter och de medföljande bilderna visas utan behörighetsdialoger.
-6. UI-testet sparar fyra PNG-bilder (lista, en rutt på kartan, fotot för passet och översikten av markerade rutter). De laddas upp som artifact `screenshots`. Samma bilder checkas in under `docs/screenshots/` så de syns i GitHub.
+6. UI-testet sparar sju PNG-bilder: kartan med litet ark, ruttlistan, en ruttdetalj, filtret, statistiken, urvalsläget och sammanfattningen. De laddas upp som artifact `screenshots`. Samma bilder checkas in under `docs/screenshots/` så de syns i GitHub.
 7. `Trails.app` för simulatorn laddas upp som artifact `Trails-simulator`. Vid fel laddas byggloggen upp i stället.
 
 Repot är publikt, så minuter på GitHub-hostade runners kostar inget. Håll bygget kort: ingen extra paketupplösning, XcodeGen cachas, och testerna är små enhetstester på en simulator.

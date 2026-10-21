@@ -106,6 +106,54 @@ enum RouteGeometry {
         )
     }
 
+    static func nearestRunID(to coordinate: RouteCoordinate, runs: [RunWorkout], within meters: Double) -> UUID? {
+        var bestID: UUID?
+        var bestDistance = meters
+        for run in runs {
+            let distance = distance(from: coordinate, toRoute: run.coordinates)
+            if distance <= bestDistance {
+                bestDistance = distance
+                bestID = run.id
+            }
+        }
+        return bestID
+    }
+
+    static func distance(from point: RouteCoordinate, toRoute route: [RouteCoordinate]) -> Double {
+        guard let first = route.first else { return .greatestFiniteMagnitude }
+        guard route.count >= 2 else { return haversine(point, first) }
+        var best = Double.greatestFiniteMagnitude
+        for index in route.indices.dropLast() {
+            best = min(best, distanceToSegment(point, route[index], route[index + 1]))
+        }
+        return best
+    }
+
+    private static func distanceToSegment(_ point: RouteCoordinate, _ start: RouteCoordinate, _ end: RouteCoordinate) -> Double {
+        let north = metersNorth(from: start, to: end)
+        let east = metersEast(from: start, to: end)
+        let lengthSquared = north * north + east * east
+        if lengthSquared < 0.01 { return haversine(point, start) }
+        let pointNorth = metersNorth(from: start, to: point)
+        let pointEast = metersEast(from: start, to: point)
+        let progress = min(1, max(0, (pointNorth * north + pointEast * east) / lengthSquared))
+        let closest = project(
+            latitude: start.latitude,
+            longitude: start.longitude,
+            northMeters: north * progress,
+            eastMeters: east * progress
+        )
+        return haversine(point, closest)
+    }
+
+    private static func metersNorth(from start: RouteCoordinate, to end: RouteCoordinate) -> Double {
+        (end.latitude - start.latitude) * 111_320
+    }
+
+    private static func metersEast(from start: RouteCoordinate, to end: RouteCoordinate) -> Double {
+        (end.longitude - start.longitude) * 111_320 * cos(start.latitude * .pi / 180)
+    }
+
     static func normalized(_ coordinates: [RouteCoordinate], in size: CGSize, padding: CGFloat = 6) -> [CGPoint] {
         guard let first = coordinates.first, size.width > padding * 2, size.height > padding * 2 else {
             return []
