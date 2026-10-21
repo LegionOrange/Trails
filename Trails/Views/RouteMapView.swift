@@ -2,15 +2,15 @@ import MapKit
 import SwiftUI
 
 enum MapSheetCover: Equatable {
-    case small
+    case chrome
     case medium
     case large
 
     func height(in total: CGFloat) -> CGFloat {
         switch self {
-        case .small: 210
-        case .medium: total * 0.5
-        case .large: total * 0.80
+        case .chrome: 168
+        case .medium: total * 0.56
+        case .large: total * 0.74
         }
     }
 }
@@ -22,6 +22,8 @@ struct TrailsMap: View {
     let isSelecting: Bool
     let showsSummary: Bool
     let sheetCover: MapSheetCover
+    let drawMode: AppModel.MapDrawMode
+    let recenterToken: Int
     var onTap: (RouteCoordinate) -> Void
 
     @State private var camera: MapCameraPosition = .region(RouteGeometry.region(for: []))
@@ -32,21 +34,12 @@ struct TrailsMap: View {
             MapReader { mapProxy in
                 Map(position: $camera) {
                     ForEach(runs) { run in
-                        let style = emphasis(for: run)
-                        if run.coordinates.count >= 2 {
-                            MapPolyline(coordinates: run.coordinates.map(\.coordinate))
-                                .stroke(
-                                    color(for: run).opacity(style.opacity),
-                                    style: StrokeStyle(lineWidth: style.width, lineCap: .round, lineJoin: .round)
-                                )
-                        }
-                        if focusedID == run.id, let start = run.coordinates.first?.coordinate {
-                            Marker(run.title, systemImage: "figure.run", coordinate: start)
-                        }
+                        routeContent(for: run)
                     }
                 }
-                .mapStyle(.standard(elevation: .flat))
+                .mutedDarkMapStyle()
                 .mapControlVisibility(.hidden)
+                .environment(\.colorScheme, .dark)
                 .simultaneousGesture(
                     SpatialTapGesture().onEnded { value in
                         guard let coordinate = mapProxy.convert(value.location, from: .local) else { return }
@@ -63,20 +56,20 @@ struct TrailsMap: View {
 
     private func cameraKey(height: CGFloat) -> String {
         let ids = runs.map(\.id.uuidString).joined(separator: ",")
-        return "\(ids)|\(focusedID?.uuidString ?? "")|\(showsSummary)|\(sheetCover)|\(Int(height.rounded()))"
+        return "\(ids)|\(focusedID?.uuidString ?? "")|\(showsSummary)|\(sheetCover)|\(drawMode)|\(recenterToken)|\(Int(height.rounded()))"
     }
 
     private func visibleFraction(in height: CGFloat) -> Double {
-        guard height > 1 else { return 0.55 }
+        guard height > 1 else { return 0.7 }
         let covered = sheetCover.height(in: height)
-        return min(0.92, max(0.16, (height - covered) / height))
+        return min(0.9, max(0.2, (height - covered) / height))
     }
 
-    /// Keeps the routes in the map area above the bottom sheet.
+    /// Keeps the routes in the map area above the panel and the tab bar.
     private func fit(visibleFraction: Double) {
         let coordinates = framedCoordinates
         var region = RouteGeometry.region(for: coordinates)
-        let visible = min(0.92, max(0.16, visibleFraction))
+        let visible = min(0.9, max(0.2, visibleFraction))
         region.span.latitudeDelta /= visible
         region.center.latitude -= region.span.latitudeDelta * (1 - visible) / 2
         camera = .region(region)
@@ -89,19 +82,77 @@ struct TrailsMap: View {
         return runs.flatMap(\.coordinates)
     }
 
-    private func color(for run: RunWorkout) -> Color {
-        let index = runs.firstIndex(where: { $0.id == run.id }) ?? 0
-        return TrailTheme.routeColor(at: index)
+    @MapContentBuilder
+    private func routeContent(for run: RunWorkout) -> some MapContent {
+        let coordinates = run.coordinates.map(\.coordinate)
+        if coordinates.count >= 2 {
+            let style = stroke(for: run)
+            MapPolyline(coordinates: coordinates)
+                .stroke(
+                    style.glow,
+                    style: StrokeStyle(lineWidth: style.glowWidth, lineCap: .round, lineJoin: .round)
+                )
+            MapPolyline(coordinates: coordinates)
+                .stroke(
+                    style.core,
+                    style: StrokeStyle(lineWidth: style.coreWidth, lineCap: .round, lineJoin: .round)
+                )
+        }
+        if focusedID == run.id, let start = coordinates.first {
+            Annotation(run.title, coordinate: start, anchor: .center) {
+                Circle()
+                    .fill(TrailTheme.routeCore)
+                    .frame(width: 14, height: 14)
+                    .overlay(Circle().stroke(Color.white, lineWidth: 2))
+                    .shadow(color: TrailTheme.routeGlow.opacity(0.9), radius: 6)
+            }
+        }
     }
 
-    private func emphasis(for run: RunWorkout) -> (width: CGFloat, opacity: Double) {
-        if showsSummary { return (6, 1) }
-        if let focusedID {
-            return focusedID == run.id ? (7, 1) : (3, 0.3)
+    private func stroke(for run: RunWorkout) -> (glow: Color, glowWidth: CGFloat, core: Color, coreWidth: CGFloat) {
+        let dimmed = isDimmed(run)
+        if drawMode == .heatmap {
+            let strength = dimmed ? 0.35 : 1.0
+            return (
+                TrailTheme.routeGlow.opacity(0.30 * strength),
+                13,
+                TrailTheme.routeCore.opacity(0.50 * strength),
+                5.5
+            )
         }
-        if isSelecting && chosenIDs.contains(run.id) { return (6, 1) }
-        if isSelecting { return (3, 0.35) }
-        return (4.5, 0.95)
+        let strength = dimmed ? 0.28 : 1.0
+        let emphasized = isEmphasized(run)
+        return (
+            TrailTheme.routeGlow.opacity((emphasized ? 0.72 : 0.48) * strength),
+            emphasized ? 12 : 8,
+            TrailTheme.routeCore.opacity(strength),
+            emphasized ? 5.2 : 3.4
+        )
+    }
+
+    private func isEmphasized(_ run: RunWorkout) -> Bool {
+        if showsSummary { return true }
+        if focusedID == run.id { return true }
+        if isSelecting && chosenIDs.contains(run.id) { return true }
+        return false
+    }
+
+    private func isDimmed(_ run: RunWorkout) -> Bool {
+        if showsSummary { return false }
+        if let focusedID { return focusedID != run.id }
+        if isSelecting { return !chosenIDs.contains(run.id) }
+        return false
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func mutedDarkMapStyle() -> some View {
+        if #available(iOS 18.0, *) {
+            self.mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll, showsTraffic: false))
+        } else {
+            self.mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll, showsTraffic: false))
+        }
     }
 }
 
@@ -117,10 +168,10 @@ struct RouteBadge: View {
             for point in points.dropFirst() {
                 path.addLine(to: point)
             }
-            context.stroke(path, with: .color(TrailTheme.accent), style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            context.stroke(path, with: .color(TrailTheme.routeCore), style: StrokeStyle(lineWidth: 2.4, lineCap: .round, lineJoin: .round))
         }
         .frame(width: 44, height: 44)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .accessibilityHidden(true)
     }
 }

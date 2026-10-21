@@ -2,69 +2,160 @@ import SwiftUI
 
 struct RootView: View {
     @Environment(AppModel.self) private var model
-    @State private var detent: PresentationDetent = Self.smallDetent
-    @State private var showsSheet = false
+    @State private var page: SheetPage = .routes
+    @State private var showsPanel = false
+    @State private var detent: PresentationDetent = .medium
 
-    static let smallDetent = PresentationDetent.height(210)
-    static let largeDetent = PresentationDetent.fraction(0.80)
+    static let largeDetent = PresentationDetent.fraction(0.74)
 
     var body: some View {
-        ZStack {
-            TrailsMap(
-                runs: model.mapRuns,
-                focusedID: model.showsSelectionSummary ? nil : model.focusedRunID,
-                chosenIDs: model.chosenRunIDs,
-                isSelecting: model.isSelecting,
-                showsSummary: model.showsSelectionSummary,
-                sheetCover: sheetCover,
-                onTap: { model.handleMapTap($0) }
-            )
-            .ignoresSafeArea()
-            .accessibilityIdentifier(model.isLoading ? "map-loading" : "map-ready")
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                TrailsMap(
+                    runs: model.mapRuns,
+                    focusedID: model.showsSelectionSummary ? nil : model.focusedRunID,
+                    chosenIDs: model.chosenRunIDs,
+                    isSelecting: model.isSelecting,
+                    showsSummary: model.showsSelectionSummary,
+                    sheetCover: sheetCover,
+                    drawMode: model.mapDrawMode,
+                    recenterToken: model.recenterToken,
+                    onTap: { model.handleMapTap($0) }
+                )
+                .ignoresSafeArea()
+                .accessibilityIdentifier(model.isLoading ? "map-loading" : "map-ready")
 
-            if model.isLoading && model.runs.isEmpty {
-                ProgressView("Hämtar rundor…")
-                    .padding(16)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                if showsPanel {
+                    RouteSheet(page: $page, detent: $detent)
+                        .padding(.bottom, 124)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: panelHeight(in: proxy.size.height))
+                        .background(panelBackground)
+                        .overlay(alignment: .top) {
+                            Capsule()
+                                .fill(Color.white.opacity(0.35))
+                                .frame(width: 42, height: 5)
+                                .padding(.top, 8)
+                                .accessibilityHidden(true)
+                        }
+                        .accessibilityIdentifier("panel")
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 28, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 28))
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .overlay(alignment: .top) { topChrome }
+            .overlay(alignment: .bottom) { bottomChrome }
+            .animation(.spring(duration: 0.38), value: showsPanel)
+            .animation(.spring(duration: 0.38), value: detent == Self.largeDetent)
         }
-        .overlay(alignment: .topTrailing) {
-            selectionControls
-                .padding(.trailing, 16)
-                .padding(.top, 8)
-        }
-        .sheet(isPresented: $showsSheet) {
-            RouteSheet(detent: $detent)
-                .presentationDetents([Self.smallDetent, .medium, Self.largeDetent], selection: $detent)
-                .presentationDragIndicator(.visible)
-                .presentationCornerRadius(28)
-                .presentationBackground(.regularMaterial)
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-                .interactiveDismissDisabled()
-        }
+        .preferredColorScheme(.dark)
         .tint(TrailTheme.accent)
         .task {
-            // A sheet whose flag starts true never transitions into view.
-            if !showsSheet {
-                try? await Task.sleep(for: .milliseconds(300))
-                showsSheet = true
-            }
             await model.reloadIfNeeded()
         }
         .onChange(of: model.focusedRunID) { _, focusedID in
             if focusedID != nil {
+                page = .routes
+                showsPanel = true
                 detent = Self.largeDetent
             }
-        }
-        .onChange(of: showsSheet) { _, isShown in
-            if !isShown { showsSheet = true }
         }
     }
 
     private var sheetCover: MapSheetCover {
-        if detent == Self.smallDetent { return .small }
-        if detent == .medium { return .medium }
-        return .large
+        guard showsPanel else { return .chrome }
+        return detent == Self.largeDetent ? .large : .medium
+    }
+
+    private func panelHeight(in total: CGFloat) -> CGFloat {
+        detent == Self.largeDetent ? total * 0.74 : total * 0.56
+    }
+
+    private var panelBackground: some View {
+        UnevenRoundedRectangle(topLeadingRadius: 28, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 28)
+            .fill(Color.black.opacity(0.62))
+            .background(
+                UnevenRoundedRectangle(topLeadingRadius: 28, bottomLeadingRadius: 0, bottomTrailingRadius: 0, topTrailingRadius: 28)
+                    .fill(.ultraThinMaterial)
+            )
+            .ignoresSafeArea(edges: .bottom)
+    }
+
+    private var topChrome: some View {
+        HStack(alignment: .center, spacing: 10) {
+            mapModeCapsule
+            Spacer(minLength: 8)
+            selectionControls
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+    }
+
+    private var bottomChrome: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Spacer()
+                Button {
+                    model.recenterMap()
+                } label: {
+                    Image(systemName: "location.fill")
+                        .font(.body.weight(.semibold))
+                        .frame(width: 46, height: 46)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("recenter-button")
+                .accessibilityLabel("Centrera")
+                .padding(.trailing, 4)
+            }
+
+            Button {
+                open(.filter)
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "calendar")
+                    Text(model.timelineTitle)
+                    Image(systemName: "chevron.up")
+                        .font(.caption.weight(.bold))
+                }
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 11)
+                .background(.ultraThinMaterial, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("timeline-pill")
+            .padding(.bottom, 10)
+
+            tabBar
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+
+    private var mapModeCapsule: some View {
+        HStack(spacing: 2) {
+            modeButton("map", mode: .routes, identifier: "map-mode-routes", label: "Rutter på kartan")
+            modeButton("flame.fill", mode: .heatmap, identifier: "map-mode-heatmap", label: "Värmekarta")
+        }
+        .padding(4)
+        .background(.ultraThinMaterial, in: Capsule())
+    }
+
+    private func modeButton(_ symbol: String, mode: AppModel.MapDrawMode, identifier: String, label: String) -> some View {
+        let selected = model.mapDrawMode == mode
+        return Button {
+            model.mapDrawMode = mode
+        } label: {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .frame(width: 36, height: 36)
+                .background(selected ? TrailTheme.accent : Color.clear, in: Circle())
+                .foregroundStyle(selected ? Color.black : Color.white)
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(identifier)
+        .accessibilityLabel(label)
     }
 
     private var selectionControls: some View {
@@ -72,6 +163,8 @@ struct RootView: View {
             if model.isSelecting && !model.chosenRunIDs.isEmpty {
                 Button("Sammanfatta") {
                     model.showSummary()
+                    page = .routes
+                    showsPanel = true
                     detent = Self.largeDetent
                 }
                 .accessibilityIdentifier("summarize-button")
@@ -82,6 +175,8 @@ struct RootView: View {
                     model.endSelection()
                 } else {
                     model.beginSelection()
+                    page = .routes
+                    showsPanel = true
                     detent = .medium
                 }
             } label: {
@@ -89,13 +184,65 @@ struct RootView: View {
                     Text("Klar")
                 } else {
                     Image(systemName: "rectangle.dashed")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: 17, weight: .semibold))
                         .accessibilityHidden(true)
                 }
             }
             .accessibilityIdentifier("select-button")
             .accessibilityLabel(model.isSelecting ? "Klar" : "Välj")
             .buttonStyle(MapChromeButtonStyle(circular: !model.isSelecting))
+        }
+    }
+
+    private var tabBar: some View {
+        HStack(spacing: 0) {
+            ForEach(SheetPage.allCases) { item in
+                let active = isActive(item)
+                Button {
+                    open(item)
+                } label: {
+                    VStack(spacing: 3) {
+                        Image(systemName: item.symbol)
+                            .font(.body.weight(.semibold))
+                            .frame(width: 48, height: 28)
+                            .background(active ? TrailTheme.accent : Color.clear, in: Capsule())
+                            .foregroundStyle(active ? Color.black : Color.white.opacity(0.78))
+                        Text(item.title)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(active ? TrailTheme.accent : Color.white.opacity(0.72))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(item.accessibilityID)
+                .accessibilityAddTraits(active ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 0.5))
+    }
+
+    private func isActive(_ item: SheetPage) -> Bool {
+        if !showsPanel { return item == .routes }
+        return page == item
+    }
+
+    private func open(_ item: SheetPage) {
+        let showingRoutesList = showsPanel && page == .routes && model.focusedRun == nil && !model.showsSelectionSummary
+        page = item
+        showsPanel = true
+        switch item {
+        case .routes:
+            model.showsSelectionSummary = false
+            model.clearFocus()
+            if !showingRoutesList {
+                detent = .medium
+            }
+        case .filter, .statistics:
+            model.showsSelectionSummary = false
+            detent = Self.largeDetent
         }
     }
 }
@@ -106,15 +253,15 @@ private struct MapChromeButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.semibold))
-            .frame(minWidth: circular ? 44 : nil, minHeight: circular ? 44 : nil)
-            .padding(.horizontal, circular ? 0 : 16)
+            .foregroundStyle(circular ? AnyShapeStyle(TrailTheme.accent) : AnyShapeStyle(.primary))
+            .frame(minWidth: circular ? 46 : nil, minHeight: circular ? 46 : nil)
+            .padding(.horizontal, circular ? 0 : 14)
             .padding(.vertical, circular ? 0 : 8)
             .background {
                 if circular {
-                    Circle().fill(.regularMaterial)
+                    Circle().fill(.ultraThinMaterial)
                 } else {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.regularMaterial)
+                    Capsule().fill(.ultraThinMaterial)
                 }
             }
             .opacity(configuration.isPressed ? 0.7 : 1)

@@ -119,7 +119,7 @@ jobs:
         if: success()
         run: |
           set -euo pipefail
-          for name in 01-map-small 02-routes-list 03-route-detail 04-filter 05-statistik 06-selection 07-summary; do
+          for name in 01-map 02-routes-list 03-route-detail 04-filter 05-statistik 06-selection 07-summary 08-heatmap; do
             test -s "ci-screenshots/${name}.png"
           done
           ls -l ci-screenshots

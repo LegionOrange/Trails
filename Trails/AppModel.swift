@@ -33,6 +33,8 @@ final class AppModel {
     private(set) var statusMessage: String?
     private(set) var dataSource: DataSourceKind
     var filter = RouteFilter()
+    var mapDrawMode: MapDrawMode = .routes
+    var recenterToken = 0
     var focusedRunID: UUID?
     private(set) var isSelecting = false
     private(set) var chosenRunIDs: Set<UUID> = []
@@ -89,6 +91,22 @@ final class AppModel {
 
     var selectionStatistics: RouteStatistics {
         RouteStatistics.summarize(chosenRuns)
+    }
+
+    var timelineTitle: String {
+        if filter.selectedOnly { return "Endast valda" }
+        if filter.markedOnly { return "Markerade" }
+        if filter.usesDateRange {
+            let start = RunFormatting.date(min(filter.startDate, filter.endDate))
+            let end = RunFormatting.date(max(filter.startDate, filter.endDate))
+            return "\(start) – \(end)"
+        }
+        if filter.usesDistanceRange { return "Distansfilter" }
+        return "Alla rutter"
+    }
+
+    func recenterMap() {
+        recenterToken += 1
     }
 
     func photos(for run: RunWorkout) -> [WorkoutPhoto] {
@@ -229,6 +247,12 @@ final class AppModel {
 }
 
 extension AppModel {
+    enum MapDrawMode: String {
+        case routes
+        case heatmap
+    }
+
+
     static func preview(markedFirst: Bool = true) -> AppModel {
         let configuration = ModelConfiguration(UUID().uuidString, isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: FavoriteMark.self, configurations: configuration)

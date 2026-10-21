@@ -34,43 +34,19 @@ enum SheetPage: String, CaseIterable, Identifiable {
 
 struct RouteSheet: View {
     @Environment(AppModel.self) private var model
+    @Binding var page: SheetPage
     @Binding var detent: PresentationDetent
-    @State private var page: SheetPage = .routes
     @State private var selectedPhoto: WorkoutPhoto?
 
     var body: some View {
-        VStack(spacing: 0) {
-            Group {
-                if detent == RootView.smallDetent {
-                    peek
-                } else {
-                    pageContent
-                }
-            }
+        pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-
-            tabBar
-        }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("sheet")
-        .sheet(item: $selectedPhoto) { photo in
-            PhotoDetailView(photo: photo)
-        }
-    }
-
-    private var peek: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(model.isLoading ? "Hämtar rundor…" : "\(model.visibleRuns.count) rutter")
-                .font(.headline)
-            Text("Trackin' Trails")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.top, 4)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("sheet-peek")
+            .padding(.top, 12)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("sheet")
+            .sheet(item: $selectedPhoto) { photo in
+                PhotoDetailView(photo: photo)
+            }
     }
 
     @ViewBuilder
@@ -357,48 +333,6 @@ struct RouteSheet: View {
         .accessibilityIdentifier("summary-screen")
     }
 
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(SheetPage.allCases) { item in
-                Button {
-                    open(item)
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: item.symbol)
-                            .font(.body.weight(.semibold))
-                        Text(item.title)
-                            .font(.caption.weight(.semibold))
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .foregroundStyle(page == item ? TrailTheme.accent : Color.secondary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier(item.accessibilityID)
-                .accessibilityAddTraits(page == item ? .isSelected : [])
-            }
-        }
-        .padding(.top, 4)
-        .padding(.bottom, 6)
-        .background(.bar)
-    }
-
-    private func open(_ item: SheetPage) {
-        let showingRoutesList = page == .routes && model.focusedRun == nil && !model.showsSelectionSummary
-        page = item
-        switch item {
-        case .routes:
-            model.showsSelectionSummary = false
-            model.clearFocus()
-            if !showingRoutesList || detent == RootView.smallDetent {
-                detent = .medium
-            }
-        case .filter, .statistics:
-            model.showsSelectionSummary = false
-            detent = RootView.largeDetent
-        }
-    }
-
     private func sheetTitle(_ title: String, count: Int?) -> some View {
         HStack(alignment: .firstTextBaseline) {
             Text(title)
@@ -424,7 +358,7 @@ struct RouteSheet: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color(.secondarySystemBackground).opacity(0.65), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     private func paceText(for run: RunWorkout) -> String {
