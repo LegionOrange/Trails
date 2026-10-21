@@ -24,6 +24,7 @@ final class AppModel {
     private let samplePhotos: WorkoutPhotoSource
     private let favorites: FavoritesRepository
     let healthAvailable: Bool
+    let seedsDemoFavorites: Bool
 
     private(set) var runs: [RunWorkout] = []
     private(set) var photos: [UUID: [WorkoutPhoto]] = [:]
@@ -31,7 +32,15 @@ final class AppModel {
     private(set) var isLoading = false
     private(set) var statusMessage: String?
     private(set) var dataSource: DataSourceKind
+    var filter = RouteFilter()
+    var mapDrawMode: MapDrawMode = .routes
+    var recenterToken = 0
+    var focusedRunID: UUID?
+    private(set) var isSelecting = false
+    private(set) var chosenRunIDs: Set<UUID> = []
+    var showsSelectionSummary = false
     private var didStart = false
+    private var didSeedFilterDates = false
     private var loadGeneration = 0
 
     init(
@@ -40,7 +49,8 @@ final class AppModel {
         healthPhotos: WorkoutPhotoSource,
         samplePhotos: WorkoutPhotoSource,
         favorites: FavoritesRepository,
-        healthAvailable: Bool
+        healthAvailable: Bool,
+        seedsDemoFavorites: Bool = false
     ) {
         self.healthSource = healthSource
         self.sampleSource = sampleSource
@@ -48,11 +58,55 @@ final class AppModel {
         self.samplePhotos = samplePhotos
         self.favorites = favorites
         self.healthAvailable = healthAvailable
+        self.seedsDemoFavorites = seedsDemoFavorites
         dataSource = healthAvailable ? .health : .sample
     }
 
     var markedRuns: [RunWorkout] {
         runs.filter { favoriteIDs.contains($0.id) }
+    }
+
+    var visibleRuns: [RunWorkout] {
+        runs.filter {
+            filter.allows($0, isMarked: isFavorite($0), isChosen: chosenRunIDs.contains($0.id))
+        }
+    }
+
+    var chosenRuns: [RunWorkout] {
+        runs.filter { chosenRunIDs.contains($0.id) }
+    }
+
+    var mapRuns: [RunWorkout] {
+        showsSelectionSummary ? chosenRuns : visibleRuns
+    }
+
+    var focusedRun: RunWorkout? {
+        guard let focusedRunID else { return nil }
+        return runs.first { $0.id == focusedRunID }
+    }
+
+    var statistics: RouteStatistics {
+        RouteStatistics.summarize(visibleRuns)
+    }
+
+    var selectionStatistics: RouteStatistics {
+        RouteStatistics.summarize(chosenRuns)
+    }
+
+    var timelineTitle: String {
+        if filter.selectedOnly { return "Endast valda" }
+        if filter.markedOnly { return "Markerade" }
+        if filter.usesDateRange {
+            let start = RunFormatting.date(min(filter.startDate, filter.endDate))
+            let end = RunFormatting.date(max(filter.startDate, filter.endDate))
+            return "\(start) – \(end)"
+        }
+        if filter.usesDistanceRange { return "Distansfilter" }
+        return "Alla rutter"
+    }
+
+    func recenterMap() {
+        recenterToken += 1
     }
 
     func photos(for run: RunWorkout) -> [WorkoutPhoto] {
@@ -94,7 +148,22 @@ final class AppModel {
             guard generation == loadGeneration else { return }
             runs = loaded
             favoriteIDs = try favorites.allIDs()
+            if seedsDemoFavorites {
+                for run in runs.prefix(2) where !favoriteIDs.contains(run.id) {
+                    try favorites.setMarked(true, workoutID: run.id)
+                    favoriteIDs.insert(run.id)
+                }
+            }
             photos = loadedPhotos
+            if let focusedRunID, !runs.contains(where: { $0.id == focusedRunID }) {
+                self.focusedRunID = nil
+            }
+            chosenRunIDs.formIntersection(runs.map(\.id))
+            if !didSeedFilterDates, let earliest = runs.map(\.startDate).min(), let latest = runs.map(\.startDate).max() {
+                filter.startDate = earliest
+                filter.endDate = latest
+                didSeedFilterDates = true
+            }
             isLoading = false
             if runs.isEmpty {
                 statusMessage = dataSource == .health
@@ -108,6 +177,58 @@ final class AppModel {
             statusMessage = error.localizedDescription
             isLoading = false
         }
+    }
+
+    func focus(_ run: RunWorkout) {
+        focusedRunID = run.id
+        showsSelectionSummary = false
+    }
+
+    func clearFocus() {
+        focusedRunID = nil
+    }
+
+    func beginSelection() {
+        isSelecting = true
+        showsSelectionSummary = false
+        focusedRunID = nil
+    }
+
+    func endSelection() {
+        isSelecting = false
+    }
+
+    func toggleChosen(_ run: RunWorkout) {
+        if chosenRunIDs.contains(run.id) {
+            chosenRunIDs.remove(run.id)
+        } else {
+            chosenRunIDs.insert(run.id)
+        }
+    }
+
+    func handleMapTap(_ coordinate: RouteCoordinate) {
+        guard !showsSelectionSummary else { return }
+        guard let id = RouteGeometry.nearestRunID(to: coordinate, runs: mapRuns, within: 500),
+              let run = mapRuns.first(where: { $0.id == id }) else { return }
+        if isSelecting {
+            toggleChosen(run)
+        } else {
+            focus(run)
+        }
+    }
+
+    func showSummary() {
+        guard !chosenRunIDs.isEmpty else { return }
+        showsSelectionSummary = true
+        isSelecting = false
+        focusedRunID = nil
+    }
+
+    func applySelectedOnlyFilter() {
+        filter.selectedOnly = true
+        showsSelectionSummary = false
+        isSelecting = false
+        focusedRunID = nil
     }
 
     func toggleFavorite(_ run: RunWorkout) {
@@ -126,6 +247,12 @@ final class AppModel {
 }
 
 extension AppModel {
+    enum MapDrawMode: String {
+        case routes
+        case heatmap
+    }
+
+
     static func preview(markedFirst: Bool = true) -> AppModel {
         let configuration = ModelConfiguration(UUID().uuidString, isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: FavoriteMark.self, configurations: configuration)

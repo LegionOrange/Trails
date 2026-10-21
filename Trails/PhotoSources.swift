@@ -18,6 +18,8 @@ struct SamplePhotoSource: WorkoutPhotoSource {
         })
     }
 
+    static let bundledImageNames = ["SampleTrail", "SampleOverlook", "SampleWater"]
+
     static func photos(for run: RunWorkout) -> [WorkoutPhoto] {
         let fractions = [0.22, 0.55, 0.82]
         let palettes: [(UIColor, UIColor, String)] = [
@@ -25,10 +27,12 @@ struct SamplePhotoSource: WorkoutPhotoSource {
             (UIColor(red: 0.93, green: 0.72, blue: 0.48, alpha: 1), UIColor(red: 0.35, green: 0.42, blue: 0.28, alpha: 1), "Utsikten"),
             (UIColor(red: 0.45, green: 0.58, blue: 0.72, alpha: 1), UIColor(red: 0.62, green: 0.45, blue: 0.28, alpha: 1), "Vattnet")
         ]
+        let bundle = Bundle(for: FavoriteMark.self)
         return fractions.enumerated().map { index, fraction in
             let capturedAt = run.startDate.addingTimeInterval(run.duration * fraction)
             let palette = palettes[index % palettes.count]
-            let image = render(
+            let bundledName = bundledImageNames[index % bundledImageNames.count]
+            let image = UIImage(named: bundledName, in: bundle, compatibleWith: nil) ?? render(
                 title: run.title,
                 caption: palette.2,
                 date: capturedAt,
