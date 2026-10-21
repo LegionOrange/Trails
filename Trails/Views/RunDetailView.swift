@@ -18,6 +18,7 @@ struct RunDetailView: View {
                 ])
                 .frame(height: 320)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .accessibilityIdentifier("route-map")
 
                 HStack(spacing: 12) {
                     StatPill(title: "Distans", value: RunFormatting.distance(run.distanceMeters))
@@ -61,7 +62,7 @@ struct RunDetailView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 12) {
-                        ForEach(photos) { photo in
+                        ForEach(Array(photos.enumerated()), id: \.element.id) { index, photo in
                             Button {
                                 selectedPhoto = photo
                             } label: {
@@ -72,6 +73,7 @@ struct RunDetailView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("photo-\(index)")
                             .accessibilityLabel("Foto från \(RunFormatting.dateTime(photo.capturedAt))")
                         }
                     }
@@ -119,6 +121,8 @@ struct PhotoDetailView: View {
                 .scaledToFit()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color.black)
+                .accessibilityIdentifier("photo-detail")
+                .accessibilityLabel("Exempelfoto")
                 .navigationTitle(RunFormatting.dateTime(photo.capturedAt))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

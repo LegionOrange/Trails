@@ -73,17 +73,38 @@ targets:
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGN_IDENTITY: ""
         DEVELOPMENT_TEAM: ""
+  TrailsUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    productName: TrailsUITests
+    sources:
+      - path: TrailsUITests
+    dependencies:
+      - target: Trails
+    settings:
+      base:
+        PRODUCT_NAME: TrailsUITests
+        PRODUCT_BUNDLE_IDENTIFIER: com.legionorange.trails.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Trails
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        DEVELOPMENT_TEAM: ""
 schemes:
   Trails:
     build:
       targets:
         Trails: all
         TrailsTests: [test]
+        TrailsUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
         - TrailsTests
+        - TrailsUITests
     archive:
       config: Release

@@ -30,6 +30,8 @@ Trails/
   Trails.entitlements               com.apple.developer.healthkit
   Views/                            Lista, detalj, karta, markerade rutter
 TrailsTests/                        Enhetstester för geometri, exempeldata och markeringar
+TrailsUITests/                      Skärmbilder av huvudvyerna, startas med -demo-data
+docs/screenshots/                   PNG-bilder från den senaste gröna CI-körningen
 .github/workflows/ios.yml           Bygger och testar på macOS-runner
 ```
 
@@ -67,7 +69,8 @@ Stegen är:
 2. XcodeGen 2.46.0 hämtas som binär och cachas under `tools/xcodegen`.
 3. `xcodegen generate` skapar projektet från `project.yml`.
 4. Den nyaste installerade iPhone-simulatorn väljs (iPhone 17 om den finns).
-5. `xcodebuild test` bygger appen och kör `TrailsTests` med `CODE_SIGNING_ALLOWED=NO`.
-6. `Trails.app` för simulatorn laddas upp som artifact `Trails-simulator`. Vid fel laddas byggloggen upp i stället.
+5. `xcodebuild test` bygger appen och kör `TrailsTests` och `TrailsUITests` med `CODE_SIGNING_ALLOWED=NO`. UI-testet startar appen med `-demo-data`, så exempelrutter och de medföljande bilderna visas utan behörighetsdialoger.
+6. UI-testet sparar fyra PNG-bilder (lista, en rutt på kartan, fotot för passet och översikten av markerade rutter). De laddas upp som artifact `screenshots`. Samma bilder checkas in under `docs/screenshots/` så de syns i GitHub.
+7. `Trails.app` för simulatorn laddas upp som artifact `Trails-simulator`. Vid fel laddas byggloggen upp i stället.
 
 Repot är publikt, så minuter på GitHub-hostade runners kostar inget. Håll bygget kort: ingen extra paketupplösning, XcodeGen cachas, och testerna är små enhetstester på en simulator.

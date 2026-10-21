@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "SampleTrail.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

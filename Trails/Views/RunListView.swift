@@ -25,8 +25,10 @@ struct RunListView: View {
                                 model.toggleFavorite(run)
                             }
                         }
+                        .accessibilityIdentifier("run-\(run.title)")
                     }
                     .listStyle(.insetGrouped)
+                    .accessibilityIdentifier("run-list")
                 }
             }
             .navigationTitle("Trackin' Trails")

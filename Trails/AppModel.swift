@@ -24,6 +24,7 @@ final class AppModel {
     private let samplePhotos: WorkoutPhotoSource
     private let favorites: FavoritesRepository
     let healthAvailable: Bool
+    let seedsDemoFavorites: Bool
 
     private(set) var runs: [RunWorkout] = []
     private(set) var photos: [UUID: [WorkoutPhoto]] = [:]
@@ -40,7 +41,8 @@ final class AppModel {
         healthPhotos: WorkoutPhotoSource,
         samplePhotos: WorkoutPhotoSource,
         favorites: FavoritesRepository,
-        healthAvailable: Bool
+        healthAvailable: Bool,
+        seedsDemoFavorites: Bool = false
     ) {
         self.healthSource = healthSource
         self.sampleSource = sampleSource
@@ -48,6 +50,7 @@ final class AppModel {
         self.samplePhotos = samplePhotos
         self.favorites = favorites
         self.healthAvailable = healthAvailable
+        self.seedsDemoFavorites = seedsDemoFavorites
         dataSource = healthAvailable ? .health : .sample
     }
 
@@ -94,6 +97,12 @@ final class AppModel {
             guard generation == loadGeneration else { return }
             runs = loaded
             favoriteIDs = try favorites.allIDs()
+            if seedsDemoFavorites {
+                for run in runs.prefix(2) where !favoriteIDs.contains(run.id) {
+                    try favorites.setMarked(true, workoutID: run.id)
+                    favoriteIDs.insert(run.id)
+                }
+            }
             photos = loadedPhotos
             isLoading = false
             if runs.isEmpty {

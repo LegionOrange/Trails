@@ -20,6 +20,7 @@ struct FavoritesOverviewView: View {
                             RouteMapView(routes: overviewRoutes)
                                 .frame(height: 340)
                                 .listRowInsets(EdgeInsets())
+                                .accessibilityIdentifier("marked-map")
                         }
                         Section("Markerade rundor") {
                             ForEach(Array(model.markedRuns.enumerated()), id: \.element.id) { index, run in
