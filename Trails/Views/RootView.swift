@@ -45,6 +45,13 @@ struct RootView: View {
                 }
             }
             .overlay(alignment: .top) { topChrome }
+            .overlay(alignment: .bottom) {
+                if showsPanel {
+                    mapControls
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, panelHeight(in: proxy.size.height) + 12)
+                }
+            }
             .overlay(alignment: .bottom) { bottomChrome }
         }
         .preferredColorScheme(.dark)
@@ -90,42 +97,54 @@ struct RootView: View {
         .padding(.top, 8)
     }
 
-    private var bottomChrome: some View {
+    private var mapControls: some View {
         VStack(spacing: 10) {
             HStack {
                 Spacer()
-                Button {
-                    model.recenterMap()
-                } label: {
-                    Image(systemName: "location.fill")
-                        .font(.body.weight(.semibold))
-                        .frame(width: 46, height: 46)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("recenter-button")
-                .accessibilityLabel("Centrera")
-                .padding(.trailing, 4)
+                recenterButton
             }
+            timelinePill
+        }
+    }
 
-            Button {
-                open(.filter)
-            } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "calendar")
-                    Text(model.timelineTitle)
-                    Image(systemName: "chevron.up")
-                        .font(.caption.weight(.bold))
-                }
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 11)
-                .background(.ultraThinMaterial, in: Capsule())
+    private var recenterButton: some View {
+        Button {
+            model.recenterMap()
+        } label: {
+            Image(systemName: "location.fill")
+                .font(.body.weight(.semibold))
+                .frame(width: 46, height: 46)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("recenter-button")
+        .accessibilityLabel("Centrera")
+    }
+
+    private var timelinePill: some View {
+        Button {
+            open(.filter)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "calendar")
+                Text(model.timelineTitle)
+                Image(systemName: "chevron.up")
+                    .font(.caption.weight(.bold))
             }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier("timeline-pill")
-            .padding(.bottom, 10)
+            .font(.subheadline.weight(.semibold))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(.ultraThinMaterial, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("timeline-pill")
+    }
 
+    private var bottomChrome: some View {
+        VStack(spacing: 10) {
+            if !showsPanel {
+                mapControls
+            }
             tabBar
         }
         .padding(.horizontal, 16)
