@@ -16,6 +16,8 @@ Simulatorn har ingen riktig hälsodata. Därför finns en inbyggd exempelkälla 
 
 Det finns inget Apple Developer-konto i det här läget, och appen kodsigneras inte. Inget TestFlight och inga certifikat.
 
+En statisk webbkopia av samma gränssnitt ligger i `web/` och är inte publicerad. Öppna `web/index.html` via en lokal webbserver. Analys av läget finns i `docs/ANALYSIS.md`.
+
 ## Struktur
 
 ```text

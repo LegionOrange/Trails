@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Trackin' Trails</title>
+  <link rel="stylesheet" href="vendor/maplibre-gl.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="map" role="application" aria-label="Karta"></div>
+
+    <header class="top">
+      <div class="capsule" id="mode-capsule">
+        <button type="button" id="map-mode-routes" class="mode on" aria-label="Rutter på kartan">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 4 6.5v13l5-2 6 2 5-2v-13l-5 2-6-2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 4.5v13M15 6.5v13" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        </button>
+        <button type="button" id="map-mode-heatmap" class="mode" aria-label="Värmekarta">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3s2 3 2 5.2a2 2 0 1 1-4 0C10 6 12 3 12 3Z" fill="currentColor"/><path d="M8.2 10.2c.4 2.4 1.6 3.8 3.8 3.8s3.4-1.4 3.8-3.8c.6 1.2.7 2.6.2 4.1-1 2.8-2.4 4.2-4 4.2s-3-1.4-4-4.2c-.5-1.5-.4-2.9.2-4.1Z" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <div class="top-actions" id="selection-controls">
+        <button type="button" id="summarize-button" class="text-btn" hidden>Sammanfatta</button>
+        <button type="button" id="select-button" class="icon-btn" aria-label="Välj">
+          <span class="dashed" aria-hidden="true"></span>
+        </button>
+      </div>
+    </header>
+
+    <div id="above-panel" class="above" hidden>
+      <div class="above-row">
+        <button type="button" id="recenter-open" class="icon-btn" aria-label="Centrera">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2 4.2 20.2 12 16.4 19.8 20.2 12 2.2Z" fill="currentColor"/></svg>
+        </button>
+      </div>
+      <button type="button" id="timeline-open" class="pill"></button>
+    </div>
+
+    <section id="panel" class="panel" hidden aria-label="Ark"></section>
+
+    <footer class="bottom">
+      <div id="closed-controls" class="closed-controls">
+        <div class="above-row">
+          <button type="button" id="recenter-button" class="icon-btn" aria-label="Centrera">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2 4.2 20.2 12 16.4 19.8 20.2 12 2.2Z" fill="currentColor"/></svg>
+          </button>
+        </div>
+        <button type="button" id="timeline-pill" class="pill"></button>
+      </div>
+      <nav class="tabs" aria-label="Flikar">
+        <button type="button" id="tab-rutter" class="tab on">
+          <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4.5 4 6.5v13l5-2 6 2 5-2v-13l-5 2-6-2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 4.5v13M15 6.5v13" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></span>
+          <span>Rutter</span>
+        </button>
+        <button type="button" id="tab-filter" class="tab">
+          <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span>Filter</span>
+        </button>
+        <button type="button" id="tab-statistik" class="tab">
+          <span class="tab-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V10M12 19V5M19 19v-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+          <span>Statistik</span>
+        </button>
+      </nav>
+    </footer>
+
+    <div id="photo-modal" class="photo-modal" hidden>
+      <button type="button" id="photo-close" class="text-btn">Stäng</button>
+      <img id="photo-full" alt="Exempelfoto" />
+    </div>
+    <input id="gpx-input" type="file" accept=".gpx,application/gpx+xml,.xml" hidden />
+  </div>
+  <script src="vendor/maplibre-gl.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
