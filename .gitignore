@@ -1,4 +1,5 @@
 DerivedData/
+ci-screenshots/
 build/
 tools/
 *.xcodeproj/
