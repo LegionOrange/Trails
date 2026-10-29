@@ -63,7 +63,10 @@ final class ScreenshotTests: XCTestCase {
         try save("05-statistik")
 
         tap("tab-rutter", in: app)
-        XCTAssertTrue(app.descendants(matching: .any)["routes-list"].waitForExistence(timeout: 10))
+        if !app.descendants(matching: .any)["routes-list"].waitForExistence(timeout: 6) {
+            tap("tab-rutter", in: app)
+        }
+        XCTAssertTrue(app.descendants(matching: .any)["routes-list"].waitForExistence(timeout: 10), "Route list did not open")
         tap("select-button", in: app)
         XCTAssertTrue(app.staticTexts["Välj rutter"].waitForExistence(timeout: 10))
         tap("choose-Nackareservatet", in: app)
