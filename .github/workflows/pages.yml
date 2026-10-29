@@ -1,0 +1,37 @@
+name: Pages
+
+on:
+  push:
+    branches:
+      - cursor/ci-screenshots-051b
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Publicera web
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checka ut koden
+        uses: actions/checkout@v4
+
+      - name: Ladda upp web-mappen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+      - name: Publicera till GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
